@@ -8,6 +8,8 @@ const RouletteGame = {
         [20, "black"], [14, "red"], [31, "black"], [9, "red"], [22, "black"], [18, "red"], 
         [29, "black"], [7, "red"], [28, "black"], [12, "red"], [35, "black"], [3, "red"], [26, "black"]
     ],
+    isSpinning: false,
+    currentAngle: 0,
 
     init(app) {
         this.app = app;
@@ -62,11 +64,11 @@ const RouletteGame = {
                 </select>
             </div>
             
-            <div id="rouletteResult" style="text-align: center; margin: 30px 0; font-size: 1.2rem;">
+            <div id="rouletteResult" style="text-align: center; margin: 30px 0; font-size: 1.2rem; min-height: 60px;">
                 СДЕЛАЙТЕ СТАВКУ
             </div>
             
-            <button class="btn btn-success" style="width: 100%; height: 60px; font-size: 1.5rem;" onclick="RouletteGame.spin()">
+            <button id="spinButton" class="btn btn-success" style="width: 100%; height: 60px; font-size: 1.5rem;" onclick="RouletteGame.spin()">
                 <i class="fas fa-redo"></i> ВРАЩАТЬ
             </button>
             
@@ -92,6 +94,8 @@ const RouletteGame = {
     },
 
     spin() {
+        if (this.isSpinning) return;
+        
         const betInput = document.getElementById('rouletteBet');
         const bet = parseInt(betInput.value);
         const betType = document.getElementById('rouletteType').value;
@@ -110,8 +114,10 @@ const RouletteGame = {
         this.app.updateBalance(-bet);
         
         // Отключаем кнопку
-        const spinBtn = document.querySelector('.btn-success');
+        this.isSpinning = true;
+        const spinBtn = document.getElementById('spinButton');
         spinBtn.disabled = true;
+        spinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ВРАЩАЕТСЯ...';
         
         // Выбираем результат
         const winIndex = Math.floor(Math.random() * this.sequence.length);
@@ -162,7 +168,10 @@ const RouletteGame = {
             const resultDiv = document.getElementById('rouletteResult');
             resultDiv.innerHTML = `
                 <div style="font-size: 1.5rem; margin-bottom: 10px;">
-                    ВЫПАЛО: <strong>${winNumber}</strong> <span style="color: ${winColor === 'red' ? '#e74c3c' : winColor === 'black' ? '#2c3e50' : '#27ae60'}">(${winColor.toUpperCase()})</span>
+                    ВЫПАЛО: <strong>${winNumber}</strong> 
+                    <span style="color: ${winColor === 'red' ? '#e74c3c' : winColor === 'black' ? '#2c3e50' : '#27ae60'}; font-weight: bold;">
+                        (${winColor === 'red' ? 'КРАСНОЕ' : winColor === 'black' ? 'ЧЕРНОЕ' : 'ЗЕЛЕНОЕ'})
+                    </span>
                 </div>
                 <div style="color: ${winAmount > 0 ? 'var(--success)' : 'var(--danger)'}; font-size: 1.8rem; font-weight: bold;">
                     ${winAmount > 0 ? 'ВЫИГРЫШ: +' + winAmount + '$' : 'ПРОИГРЫШ'}
@@ -170,31 +179,37 @@ const RouletteGame = {
             `;
             
             // Включаем кнопку обратно
+            this.isSpinning = false;
             spinBtn.disabled = false;
+            spinBtn.innerHTML = '<i class="fas fa-redo"></i> ВРАЩАТЬ';
             
             // Показываем уведомление
             if (winAmount > 0) {
                 this.app.showNotification(`Вы выиграли ${winAmount}$!`, 'success');
+            } else {
+                this.app.showNotification('Ставка не сыграла', 'warning');
             }
         });
     },
 
     drawWheel(angle = 0, highlightNumber = null) {
         const canvas = document.getElementById('rouletteCanvas');
+        if (!canvas) return;
+        
         const ctx = canvas.getContext('2d');
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
-        const radius = 250;
+        const radius = 220;
         
         // Очищаем canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // Внешний обод
         ctx.beginPath();
-        ctx.arc(cx, cy, radius + 10, 0, Math.PI * 2);
-        ctx.fillStyle = '#444';
+        ctx.arc(cx, cy, radius + 15, 0, Math.PI * 2);
+        ctx.fillStyle = '#2c3e50';
         ctx.fill();
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 3;
         ctx.strokeStyle = '#f1c40f';
         ctx.stroke();
         
@@ -202,14 +217,19 @@ const RouletteGame = {
         const angleStep = (Math.PI * 2) / this.sequence.length;
         
         this.sequence.forEach(([number, color], i) => {
-            const startAngle = i * angleStep + angle;
+            const startAngle = angle + (i * angleStep);
             
             // Определяем цвет
-            let fillColor = color === 'red' ? '#e74c3c' : 
-                           color === 'black' ? '#2c3e50' : '#27ae60';
+            let fillColor;
+            switch(color) {
+                case 'red': fillColor = '#e74c3c'; break;
+                case 'black': fillColor = '#2c3e50'; break;
+                case 'green': fillColor = '#27ae60'; break;
+            }
             
+            // Подсветка выигрышного номера
             if (highlightNumber === number) {
-                fillColor = '#f1c40f'; // Подсветка
+                fillColor = '#f1c40f';
             }
             
             // Рисуем сектор
@@ -219,87 +239,109 @@ const RouletteGame = {
             ctx.closePath();
             ctx.fillStyle = fillColor;
             ctx.fill();
-            ctx.strokeStyle = 'white';
+            ctx.strokeStyle = '#ecf0f1';
             ctx.lineWidth = 1;
             ctx.stroke();
             
             // Текст номера
             const textAngle = startAngle + angleStep / 2;
-            const textRadius = radius - 30;
+            const textRadius = radius - 40;
             const tx = cx + Math.cos(textAngle) * textRadius;
-            const ty = cy - Math.sin(textAngle) * textRadius;
+            const ty = cy + Math.sin(textAngle) * textRadius;
             
             ctx.save();
             ctx.translate(tx, ty);
-            ctx.rotate(-textAngle + Math.PI / 2);
+            
+            // Поворачиваем текст по направлению к центру
+            const rotateAngle = textAngle + Math.PI / 2;
+            ctx.rotate(rotateAngle);
+            
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText(number, 0, 0);
+            ctx.fillStyle = color === 'black' ? '#ecf0f1' : '#2c3e50';
+            ctx.font = 'bold 16px Arial';
+            
+            // Увеличиваем шрифт для нуля
+            if (number === 0) {
+                ctx.font = 'bold 20px Arial';
+                ctx.fillStyle = '#ecf0f1';
+            }
+            
+            ctx.fillText(number.toString(), 0, 0);
             ctx.restore();
         });
         
-        // Центр
+        // Центр колеса
         ctx.beginPath();
-        ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 60, 0, Math.PI * 2);
         ctx.fillStyle = '#111';
         ctx.fill();
         ctx.strokeStyle = '#f1c40f';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.stroke();
         
+        // Логотип в центре
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#f1c40f';
-        ctx.font = 'bold 20px Impact';
+        ctx.font = 'bold 22px Impact';
         ctx.fillText('DIAMOND', cx, cy);
         
-        // Стрелка
+        // Стрелка (указатель)
         ctx.beginPath();
-        ctx.moveTo(cx + radius + 15, cy);
-        ctx.lineTo(cx + radius + 40, cy - 15);
-        ctx.lineTo(cx + radius + 40, cy + 15);
+        ctx.moveTo(cx + radius + 10, cy);
+        ctx.lineTo(cx + radius + 35, cy - 12);
+        ctx.lineTo(cx + radius + 35, cy + 12);
         ctx.closePath();
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = '#f1c40f';
         ctx.fill();
-        ctx.strokeStyle = 'black';
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Обод стрелки
+        ctx.beginPath();
+        ctx.arc(cx + radius + 10, cy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#c0392b';
+        ctx.fill();
+        ctx.strokeStyle = '#f1c40f';
         ctx.lineWidth = 2;
         ctx.stroke();
     },
 
     animateWheel(winIndex, callback) {
-        const totalSpins = 50 + Math.floor(Math.random() * 50);
-        let currentSpin = 0;
-        let speed = 20;
+        const totalSpins = 60; // Количество шагов анимации
+        const totalAngle = Math.PI * 2 * 5 + (winIndex * (Math.PI * 2 / this.sequence.length)); // 5 полных оборотов + до выигрышного сектора
+        let currentStep = 0;
         
         const animate = () => {
-            // Увеличиваем скорость в начале, замедляем в конце
-            if (currentSpin < totalSpins - 20) {
-                speed = Math.max(5, speed * 0.95);
-            } else {
-                speed = speed * 1.1;
-            }
-            
-            // Рассчитываем угол с учетом выигрышной позиции
-            const targetAngle = (winIndex * (Math.PI * 2 / this.sequence.length)) + (Math.PI * 2 * 3);
-            const progress = currentSpin / totalSpins;
-            const easeProgress = 1 - Math.pow(1 - progress, 3); // Кубическая эйзинг-функция
-            const currentAngle = targetAngle * easeProgress;
+            // Easing функция для плавного старта и остановки
+            const progress = currentStep / totalSpins;
+            const easeProgress = this.easeOutCubic(progress);
+            const currentAngle = totalAngle * easeProgress;
             
             this.drawWheel(currentAngle);
             
-            if (currentSpin < totalSpins) {
-                currentSpin++;
+            if (currentStep < totalSpins) {
+                currentStep++;
+                // Меняем скорость: быстро в начале, медленно в конце
+                const speed = 20 + (progress * 40);
                 setTimeout(animate, speed);
             } else {
                 // Финальная отрисовка с подсветкой
                 const [winNumber] = this.sequence[winIndex];
-                this.drawWheel(targetAngle % (Math.PI * 2), winNumber);
-                setTimeout(callback, 500);
+                const finalAngle = (winIndex * (Math.PI * 2 / this.sequence.length)) + Math.PI / 2; // Добавляем смещение для стрелки
+                this.drawWheel(finalAngle, winNumber);
+                
+                // Задержка перед callback
+                setTimeout(callback, 1000);
             }
         };
         
         animate();
+    },
+
+    easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
     }
 };
