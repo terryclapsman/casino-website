@@ -540,4 +540,248 @@ body {
     border-radius: 50%;
     border-top-color: var(--primary);
     animation: spin 1s linear infinite;
+
+}
+
+/* Добавьте эти стили в конец файла styles.css */
+
+/* Анимации для уведомлений */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+.notification {
+    animation: slideInRight 0.3s ease forwards;
+}
+
+.notification.fade-out {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+/* Стили для полей ввода в профиле */
+.form-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #333;
+}
+
+/* Анимация вращения для рулетки */
+@keyframes spin-fast {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinning {
+    animation: spin-fast 0.5s linear infinite;
+}
+
+/* Улучшенные стили для карточек в профиле */
+.profile-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+}
+
+.profile-section-title {
+    color: var(--text-light);
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 10px;
+}
+
+/* Стили для кнопок в профиле */
+.profile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.profile-btn-primary {
+    background: var(--primary);
+    color: #000;
+}
+
+.profile-btn-secondary {
+    background: var(--secondary);
+    color: white;
+}
+
+.profile-btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Стили для таблицы в профиле */
+.profile-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.profile-table th,
+.profile-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-table th {
+    color: var(--text-gray);
+    font-weight: 600;
+    background: rgba(255,255,255,0.05);
+}
+
+.profile-table tr:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+/* Стили для статуса в играх */
+.game-status {
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.game-status.win {
+    background: rgba(39, 174, 96, 0.2);
+    color: var(--success);
+    border: 2px solid var(--success);
+}
+
+.game-status.loss {
+    background: rgba(192, 57, 43, 0.2);
+    color: var(--danger);
+    border: 2px solid var(--danger);
+}
+
+.game-status.tie {
+    background: rgba(243, 156, 18, 0.2);
+    color: var(--warning);
+    border: 2px solid var(--warning);
+}
+
+/* Стили для баланса в навигации */
+.balance-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(39, 174, 96, 0.1);
+    border-radius: 20px;
+    border: 2px solid var(--success);
+}
+
+.balance-icon {
+    color: var(--success);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .roulette-container {
+        flex-direction: column;
+    }
+    
+    .wheel-canvas {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .profile-section {
+        padding: 15px;
+    }
+    
+    .profile-table {
+        font-size: 0.9rem;
+    }
+    
+    .profile-table th,
+    .profile-table td {
+        padding: 8px 10px;
+    }
+    
+    .game-card {
+        min-height: 250px;
+        padding: 20px;
+    }
+    
+    .game-title {
+        font-size: 1.8rem;
+    }
+}
+
+/* Стили для страницы входа/регистрации */
+.auth-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 40px;
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.auth-title {
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 30px;
+    color: var(--primary);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-link {
+    text-align: center;
+    color: var(--text-gray);
+    margin-top: 20px;
+}
+
+.auth-link a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
 }
