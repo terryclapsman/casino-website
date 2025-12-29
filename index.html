@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💎 Diamond Casino</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav id="navbar" class="navbar">
+        <div class="nav-container">
+            <div class="nav-left">
+                <div class="logo">
+                    <i class="fas fa-gem logo-icon"></i>
+                    <span class="logo-text">ROYAL CASINO</span>
+                </div>
+            </div>
+            <div class="nav-right" id="navRight">
+                <!-- Динамически заполняется JS -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основное содержимое -->
+    <main id="mainContent">
+        <!-- Динамически заполняется JS -->
+    </main>
+
+    <!-- Модальные окна -->
+    <div id="modalOverlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Заголовок</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Содержимое модального окна
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Скрипты -->
+    <script src="auth.js"></script>
+    <script src="games/roulette.js"></script>
+    <script src="games/blackjack.js"></script>
+    <script src="games/slots.js"></script>
+    <script src="games/dice.js"></script>
+    <script src="games/baccarat.js"></script>
+    <script src="ui.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
