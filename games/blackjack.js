@@ -25,48 +25,61 @@ const BlackjackGame = {
             <div id="bjTable" style="background: #0b3822; border-radius: 20px; padding: 30px; border: 5px solid #3c2f2f;">
                 <!-- Дилер -->
                 <div style="margin-bottom: 50px;">
-                    <h3 style="color: white; margin-bottom: 20px;">ДИЛЕР:</h3>
+                    <h3 style="color: white; margin-bottom: 20px; text-align: center;">ДИЛЕР:</h3>
                     <div id="dealerCards" class="cards-container"></div>
                     <div id="dealerScore" style="text-align: center; color: white; font-size: 1.2rem;"></div>
                 </div>
                 
                 <!-- Игрок -->
                 <div>
-                    <h3 style="color: white; margin-bottom: 20px;">ВАШИ КАРТЫ:</h3>
+                    <h3 style="color: white; margin-bottom: 20px; text-align: center;">ВАШИ КАРТЫ:</h3>
                     <div id="playerCards" class="cards-container"></div>
                     <div id="playerScore" style="text-align: center; color: white; font-size: 1.2rem; margin-bottom: 30px;"></div>
                 </div>
             </div>
             
-            <div id="bjMessage" style="text-align: center; font-size: 1.5rem; margin: 20px 0; min-height: 60px;"></div>
+            <div id="bjMessage" style="text-align: center; font-size: 1.5rem; margin: 20px 0; min-height: 60px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px;"></div>
             
-            <div style="background: #082818; border-radius: 10px; padding: 20px; margin-top: 30px;">
-                <div class="form-group">
-                    <label class="form-label">СТАВКА:</label>
-                    <input type="number" id="bjBet" class="form-input" value="100" min="1">
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button class="btn" onclick="BlackjackGame.addBet(100)">+100</button>
-                        <button class="btn" onclick="BlackjackGame.addBet(500)">+500</button>
-                        <button class="btn btn-warning" onclick="BlackjackGame.setMaxBet()">MAX</button>
+            <div style="background: #082818; border-radius: 10px; padding: 20px; margin-top: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <!-- Центрированный блок ставки -->
+                <div class="form-group" style="text-align: center;">
+                    <label class="form-label" style="color: white; font-size: 1.2rem; display: block; margin-bottom: 15px;">СТАВКА:</label>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <input type="number" id="bjBet" class="form-input" value="100" min="1" style="width: 200px; text-align: center; font-size: 1.3rem; height: 50px;">
+                    </div>
+                    
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                        <button class="btn" onclick="BlackjackGame.addBet(100)" style="min-width: 80px; height: 40px;">+100</button>
+                        <button class="btn" onclick="BlackjackGame.addBet(500)" style="min-width: 80px; height: 40px;">+500</button>
+                        <button class="btn" onclick="BlackjackGame.addBet(1000)" style="min-width: 80px; height: 40px;">+1000</button>
+                        <button class="btn btn-warning" onclick="BlackjackGame.setMaxBet()" style="min-width: 80px; height: 40px;">MAX</button>
                     </div>
                 </div>
                 
-                <div id="bjControls" style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-success" onclick="BlackjackGame.deal()" style="flex: 1;">
+                <div id="bjControls" style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-success" onclick="BlackjackGame.deal()" style="width: 200px; height: 60px; font-size: 1.3rem; font-weight: bold;">
                         <i class="fas fa-play"></i> РАЗДАТЬ
                     </button>
                 </div>
                 
-                <div id="bjGameControls" style="display: none; gap: 10px; margin-top: 20px;">
-                    <button class="btn" onclick="BlackjackGame.hit()" style="flex: 1;">ЕЩЕ</button>
-                    <button class="btn btn-danger" onclick="BlackjackGame.stand()" style="flex: 1;">СТОП</button>
-                    <button class="btn btn-warning" onclick="BlackjackGame.doubleDown()" style="flex: 1;">УДВОИТЬ</button>
+                <div id="bjGameControls" style="display: none; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
+                    <button class="btn" onclick="BlackjackGame.hit()" style="min-width: 120px; height: 50px; font-size: 1.1rem;">
+                        <i class="fas fa-plus"></i> ЕЩЕ
+                    </button>
+                    <button class="btn btn-danger" onclick="BlackjackGame.stand()" style="min-width: 120px; height: 50px; font-size: 1.1rem;">
+                        <i class="fas fa-hand"></i> СТОП
+                    </button>
+                    <button class="btn btn-warning" onclick="BlackjackGame.doubleDown()" style="min-width: 140px; height: 50px; font-size: 1.1rem;">
+                        <i class="fas fa-times-circle"></i> УДВОИТЬ
+                    </button>
                 </div>
             </div>
             
-            <button class="btn" style="margin-top: 20px;" onclick="CasinoApp.showLobby()">
-                <i class="fas fa-arrow-left"></i> В МЕНЮ
-            </button>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="CasinoApp.showLobby()" style="width: 200px; height: 50px; font-size: 1.1rem;">
+                    <i class="fas fa-arrow-left"></i> В МЕНЮ
+                </button>
+            </div>
         `;
         
         main.appendChild(container);
@@ -212,7 +225,7 @@ const BlackjackGame = {
             }
         }
         
-        this.updateMessage('Ваш ход');
+        this.updateMessage('Ваш ход. Выберите действие');
     },
 
     hit() {

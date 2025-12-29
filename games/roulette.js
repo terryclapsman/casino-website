@@ -10,6 +10,7 @@ const RouletteGame = {
     ],
     isSpinning: false,
     currentAngle: 0,
+    animationId: null,
 
     init(app) {
         this.app = app;
@@ -119,13 +120,15 @@ const RouletteGame = {
         spinBtn.disabled = true;
         spinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ВРАЩАЕТСЯ...';
         
-        // Выбираем результат
+        // Выбираем результат ЗАРАНЕЕ
         const winIndex = Math.floor(Math.random() * this.sequence.length);
         const [winNumber, winColor] = this.sequence[winIndex];
         
+        console.log('Выбранный результат:', winNumber, winColor, 'Индекс:', winIndex);
+        
         // Анимация вращения
-        this.animateWheel(winIndex, () => {
-            // Определяем выигрыш
+        this.animateWheel(winIndex, winNumber, () => {
+            // Определяем выигрыш на основе ЗАРАНЕЕ выбранного результата
             let winAmount = 0;
             const isRed = winColor === 'red';
             const isBlack = winColor === 'black';
@@ -287,11 +290,11 @@ const RouletteGame = {
         ctx.font = 'bold 22px Impact';
         ctx.fillText('DIAMOND', cx, cy);
         
-        // Стрелка (указатель)
+        // Стрелка (указатель) - рисуем сверху
         ctx.beginPath();
-        ctx.moveTo(cx + radius + 10, cy);
-        ctx.lineTo(cx + radius + 35, cy - 12);
-        ctx.lineTo(cx + radius + 35, cy + 12);
+        ctx.moveTo(cx, cy - radius - 10);
+        ctx.lineTo(cx - 12, cy - radius - 35);
+        ctx.lineTo(cx + 12, cy - radius - 35);
         ctx.closePath();
         ctx.fillStyle = '#f1c40f';
         ctx.fill();
@@ -301,7 +304,7 @@ const RouletteGame = {
         
         // Обод стрелки
         ctx.beginPath();
-        ctx.arc(cx + radius + 10, cy, 8, 0, Math.PI * 2);
+        ctx.arc(cx, cy - radius - 10, 8, 0, Math.PI * 2);
         ctx.fillStyle = '#c0392b';
         ctx.fill();
         ctx.strokeStyle = '#f1c40f';
@@ -309,34 +312,46 @@ const RouletteGame = {
         ctx.stroke();
     },
 
-    animateWheel(winIndex, callback) {
+    animateWheel(winIndex, winNumber, callback) {
         const totalSpins = 60; // Количество шагов анимации
-        const totalAngle = Math.PI * 2 * 5 + (winIndex * (Math.PI * 2 / this.sequence.length)); // 5 полных оборотов + до выигрышного сектора
+        
+        // Рассчитываем угол для остановки на выигрышном номере ПОД СТРЕЛКОЙ
+        // Стрелка находится вверху (угол -90 градусов или 3π/2 радиан)
+        const targetAngle = - (winIndex * (2 * Math.PI / this.sequence.length)) + (3 * Math.PI / 2);
+        
+        // Добавляем несколько полных оборотов для анимации
+        const extraSpins = 5 * 2 * Math.PI;
+        const finalAngle = targetAngle + extraSpins;
+        
         let currentStep = 0;
+        let currentAngle = 0;
         
         const animate = () => {
             // Easing функция для плавного старта и остановки
             const progress = currentStep / totalSpins;
             const easeProgress = this.easeOutCubic(progress);
-            const currentAngle = totalAngle * easeProgress;
+            currentAngle = finalAngle * easeProgress;
             
             this.drawWheel(currentAngle);
             
             if (currentStep < totalSpins) {
                 currentStep++;
-                // Меняем скорость: быстро в начале, медленно в конце
+                // Замедляем анимацию к концу
                 const speed = 20 + (progress * 40);
-                setTimeout(animate, speed);
+                this.animationId = setTimeout(animate, speed);
             } else {
                 // Финальная отрисовка с подсветкой
-                const [winNumber] = this.sequence[winIndex];
-                const finalAngle = (winIndex * (Math.PI * 2 / this.sequence.length)) + Math.PI / 2; // Добавляем смещение для стрелки
-                this.drawWheel(finalAngle, winNumber);
+                this.drawWheel(targetAngle % (2 * Math.PI), winNumber);
                 
                 // Задержка перед callback
-                setTimeout(callback, 1000);
+                setTimeout(callback, 500);
             }
         };
+        
+        // Останавливаем предыдущую анимацию
+        if (this.animationId) {
+            clearTimeout(this.animationId);
+        }
         
         animate();
     },
