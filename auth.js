@@ -1,15 +1,20 @@
 // Дополнительные функции безопасности
 
-// В реальном приложении используйте более сложное хеширование
+// Улучшенное хеширование пароля
 function hashPassword(password) {
-    // Простое демо-хеширование
+    // Более сложное хеширование для безопасности
     let hash = 0;
+    const prime = 31;
+    
     for (let i = 0; i < password.length; i++) {
         const char = password.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
+        hash = hash & hash; // Преобразуем в 32-битное целое
+        hash = (hash * prime) ^ char; // Дополнительное перемешивание
     }
-    return hash.toString(36);
+    
+    // Преобразуем в строку base36 и добавляем соль
+    return (hash >>> 0).toString(36) + password.length.toString(36);
 }
 
 // Проверка сессии при загрузке
@@ -18,8 +23,15 @@ function checkSession() {
     if (session) {
         try {
             const data = JSON.parse(session);
-            if (data.currentUser && Date.now() - new Date(data.lastLogin).getTime() < 24 * 60 * 60 * 1000) {
-                return data.currentUser;
+            const sessionAge = Date.now() - new Date(data.lastLogin).getTime();
+            const maxAge = 24 * 60 * 60 * 1000; // 24 часа
+            
+            if (data.currentUser && sessionAge < maxAge) {
+                // Проверяем, существует ли пользователь в базе
+                const db = JSON.parse(localStorage.getItem('casino_db') || '{}');
+                if (db[data.currentUser]) {
+                    return data.currentUser;
+                }
             }
         } catch (e) {
             console.error('Ошибка при проверке сессии:', e);
@@ -28,22 +40,151 @@ function checkSession() {
     return null;
 }
 
+// Обновление сессии при действиях пользователя
+function updateSession() {
+    if (CasinoApp.currentUser) {
+        localStorage.setItem('casino_session', JSON.stringify({
+            currentUser: CasinoApp.currentUser,
+            lastLogin: new Date().toISOString()
+        }));
+    }
+}
+
 // Автоматический выход при неактивности
 let inactivityTimer;
+
 function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => {
-        if (CasinoApp.currentUser) {
-            CasinoApp.logout();
+    if (CasinoApp.currentUser) {
+        inactivityTimer = setTimeout(() => {
             CasinoApp.showNotification('Сессия истекла из-за неактивности', 'warning');
-        }
-    }, 30 * 60 * 1000); // 30 минут
+            CasinoApp.logout();
+        }, 30 * 60 * 1000); // 30 минут
+    }
 }
 
 // Сброс таймера при активности пользователя
-document.addEventListener('mousemove', resetInactivityTimer);
-document.addEventListener('keypress', resetInactivityTimer);
-document.addEventListener('click', resetInactivityTimer);
+const activityEvents = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+activityEvents.forEach(event => {
+    document.addEventListener(event, resetInactivityTimer);
+});
 
 // Инициализация таймера при загрузке
 resetInactivityTimer();
+
+// Проверка существования пользователя перед действиями
+function validateUser() {
+    if (!CasinoApp.currentUser) {
+        CasinoApp.showNotification('Сначала войдите в аккаунт', 'warning');
+        CasinoApp.showLogin();
+        return false;
+    }
+    
+    if (!CasinoApp.db[CasinoApp.currentUser]) {
+        CasinoApp.showNotification('Ошибка: пользователь не найден', 'error');
+        CasinoApp.logout();
+        return false;
+    }
+    
+    return true;
+}
+
+// Защита от XSS атак
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return input;
+    
+    const div = document.createElement('div');
+    div.textContent = input;
+    return div.innerHTML;
+}
+
+// Валидация имени пользователя
+function isValidUsername(username) {
+    if (!username || username.length < 3) return false;
+    if (username.length > 20) return false;
+    // Разрешаем только буквы, цифры и подчеркивания
+    return /^[a-zA-Z0-9_]+$/.test(username);
+}
+
+// Валидация пароля
+function isValidPassword(password) {
+    if (!password || password.length < 4) return false;
+    if (password.length > 50) return false;
+    return true;
+}
+
+// Обновляем функции регистрации и входа в CasinoApp
+CasinoApp.register = function() {
+    const username = document.getElementById('regUsername').value.trim();
+    const password = document.getElementById('regPassword').value;
+    
+    if (!isValidUsername(username)) {
+        this.showNotification('Логин должен быть 3-20 символов (только буквы, цифры, _)', 'error');
+        return;
+    }
+    
+    if (!isValidPassword(password)) {
+        this.showNotification('Пароль должен быть 4-50 символов', 'error');
+        return;
+    }
+    
+    if (this.db[username]) {
+        this.showNotification('Логин уже занят', 'error');
+        return;
+    }
+    
+    this.db[username] = {
+        password: hashPassword(password),
+        balance: 1000,
+        avatar: '',
+        createdAt: new Date().toISOString(),
+        gamesPlayed: 0,
+        totalWins: 0
+    };
+    
+    this.saveDatabase();
+    this.showNotification('Аккаунт создан! Бонус: 1000$', 'success');
+    this.showLogin();
+};
+
+CasinoApp.login = function() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!username || !password) {
+        this.showNotification('Заполните все поля', 'error');
+        return;
+    }
+    
+    if (this.db[username] && this.db[username].password === hashPassword(password)) {
+        this.currentUser = username;
+        this.saveSession();
+        this.renderNavigation();
+        this.showLobby();
+        this.showNotification('Успешный вход!', 'success');
+        
+        // Обновляем статистику входа
+        updateSession();
+    } else {
+        this.showNotification('Неверный логин или пароль', 'error');
+    }
+};
+
+// Инициализация при загрузке с проверкой сессии
+document.addEventListener('DOMContentLoaded', () => {
+    // Восстанавливаем сессию
+    const savedUser = checkSession();
+    if (savedUser) {
+        CasinoApp.currentUser = savedUser;
+    }
+    
+    // Инициализируем приложение
+    CasinoApp.init();
+    
+    // Показываем уведомление о восстановлении сессии
+    if (savedUser) {
+        setTimeout(() => {
+            CasinoApp.showNotification(`Добро пожаловать обратно, ${savedUser}!`, 'success');
+        }, 1000);
+    }
+});
