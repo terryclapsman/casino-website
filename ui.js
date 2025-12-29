@@ -179,3 +179,186 @@ CasinoApp.startGame = function(gameId) {
         initGame(gameMap[gameId].name, gameMap[gameId].func);
     }
 };
+
+// Функции для работы с формами
+function validateForm(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return false;
+    
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    let isValid = true;
+    
+    inputs.forEach(input => {
+        if (!input.value.trim()) {
+            isValid = false;
+            input.style.borderColor = 'var(--danger)';
+            
+            // Убираем красную рамку при исправлении
+            input.addEventListener('input', () => {
+                if (input.value.trim()) {
+                    input.style.borderColor = '';
+                }
+            });
+        }
+    });
+    
+    return isValid;
+}
+
+// Анимация перехода между экранами
+function fadeIn(element, duration = 300) {
+    element.style.opacity = 0;
+    element.style.display = 'block';
+    
+    let opacity = 0;
+    const start = performance.now();
+    
+    function animate(time) {
+        opacity = (time - start) / duration;
+        if (opacity > 1) opacity = 1;
+        
+        element.style.opacity = opacity;
+        
+        if (opacity < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+function fadeOut(element, duration = 300) {
+    let opacity = 1;
+    const start = performance.now();
+    
+    function animate(time) {
+        opacity = 1 - (time - start) / duration;
+        if (opacity < 0) opacity = 0;
+        
+        element.style.opacity = opacity;
+        
+        if (opacity > 0) {
+            requestAnimationFrame(animate);
+        } else {
+            element.style.display = 'none';
+        }
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+// Функция для создания колеса выбора
+function createWheel(items, options = {}) {
+    const wheel = document.createElement('div');
+    wheel.className = 'wheel';
+    wheel.style.cssText = `
+        width: ${options.size || 300}px;
+        height: ${options.size || 300}px;
+        border-radius: 50%;
+        position: relative;
+        overflow: hidden;
+        border: 4px solid ${options.borderColor || '#f1c40f'};
+    `;
+    
+    const angle = 360 / items.length;
+    
+    items.forEach((item, index) => {
+        const slice = document.createElement('div');
+        slice.className = 'wheel-slice';
+        slice.style.cssText = `
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            transform: rotate(${index * angle}deg) skew(${90 - angle}deg);
+            background: ${item.color || getRandomColor()};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        `;
+        
+        const content = document.createElement('div');
+        content.textContent = item.text || item;
+        content.style.cssText = `
+            transform: rotate(${angle/2}deg) skew(${angle - 90}deg);
+            text-align: center;
+            width: 100%;
+        `;
+        
+        slice.appendChild(content);
+        wheel.appendChild(slice);
+    });
+    
+    return wheel;
+}
+
+// Утилитарные функции
+function getRandomColor() {
+    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#c0392b'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Инициализация UI компонентов при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    // Добавляем обработчики для всех кнопок возврата
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.back-button') || 
+            e.target.textContent.includes('ВЕРНУТЬСЯ') || 
+            e.target.textContent.includes('НАЗАД') ||
+            e.target.textContent.includes('ВЫХОД')) {
+            if (!e.target.closest('.game-card')) {
+                // Не делаем ничего, если это кнопка в карточке игры
+                e.preventDefault();
+            }
+        }
+    });
+    
+    // Добавляем анимацию загрузки при переходе между страницами
+    const originalClearUI = CasinoApp.clearUI;
+    CasinoApp.clearUI = function() {
+        const main = document.getElementById('mainContent');
+        if (main.children.length > 0) {
+            fadeOut(main, 200);
+            setTimeout(() => {
+                originalClearUI.call(this);
+                setTimeout(() => fadeIn(main, 200), 50);
+            }, 200);
+        } else {
+            originalClearUI.call(this);
+            fadeIn(main, 200);
+        }
+    };
+});
+
+// Экспортируем функции для использования в других модулях
+window.UIHelpers = {
+    showModal,
+    closeModal,
+    createNotification,
+    formatMoney,
+    validateBet,
+    animateWin,
+    showLoading,
+    hideLoading,
+    initGame,
+    validateForm,
+    fadeIn,
+    fadeOut,
+    createWheel,
+    getRandomColor,
+    debounce
+};

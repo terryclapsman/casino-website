@@ -170,8 +170,111 @@ CasinoApp.login = function() {
     }
 };
 
+// Функция для очистки старых сессий
+function cleanupOldSessions() {
+    const session = localStorage.getItem('casino_session');
+    if (session) {
+        try {
+            const data = JSON.parse(session);
+            const sessionAge = Date.now() - new Date(data.lastLogin).getTime();
+            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 дней
+            
+            if (sessionAge > maxAge) {
+                localStorage.removeItem('casino_session');
+            }
+        } catch (e) {
+            console.error('Ошибка при очистке сессий:', e);
+        }
+    }
+}
+
+// Функция для сохранения истории игр
+function saveGameHistory(game, bet, result, winAmount) {
+    if (!CasinoApp.currentUser) return;
+    
+    const historyKey = `casino_history_${CasinoApp.currentUser}`;
+    let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    
+    history.push({
+        game,
+        bet,
+        result,
+        winAmount,
+        timestamp: new Date().toISOString(),
+        balance: CasinoApp.db[CasinoApp.currentUser].balance
+    });
+    
+    // Ограничиваем историю последними 100 играми
+    if (history.length > 100) {
+        history = history.slice(-100);
+    }
+    
+    localStorage.setItem(historyKey, JSON.stringify(history));
+}
+
+// Функция для получения истории игр
+function getGameHistory() {
+    if (!CasinoApp.currentUser) return [];
+    
+    const historyKey = `casino_history_${CasinoApp.currentUser}`;
+    return JSON.parse(localStorage.getItem(historyKey) || '[]');
+}
+
+// Функция для обновления статистики пользователя
+function updateUserStats(game, winAmount) {
+    if (!CasinoApp.currentUser) return;
+    
+    const user = CasinoApp.db[CasinoApp.currentUser];
+    if (!user.stats) {
+        user.stats = {
+            totalGames: 0,
+            totalWins: 0,
+            totalLosses: 0,
+            totalWon: 0,
+            totalLost: 0,
+            games: {}
+        };
+    }
+    
+    user.stats.totalGames++;
+    
+    if (winAmount > 0) {
+        user.stats.totalWins++;
+        user.stats.totalWon += winAmount;
+    } else {
+        user.stats.totalLosses++;
+        user.stats.totalLost += Math.abs(winAmount);
+    }
+    
+    if (!user.stats.games[game]) {
+        user.stats.games[game] = {
+            played: 0,
+            won: 0,
+            lost: 0,
+            wonAmount: 0,
+            lostAmount: 0
+        };
+    }
+    
+    const gameStats = user.stats.games[game];
+    gameStats.played++;
+    
+    if (winAmount > 0) {
+        gameStats.won++;
+        gameStats.wonAmount += winAmount;
+    } else {
+        gameStats.lost++;
+        gameStats.lostAmount += Math.abs(winAmount);
+    }
+    
+    CasinoApp.saveDatabase();
+}
+
 // Инициализация при загрузке с проверкой сессии
 document.addEventListener('DOMContentLoaded', () => {
+    // Очищаем старые сессии
+    cleanupOldSessions();
+    
     // Восстанавливаем сессию
     const savedUser = checkSession();
     if (savedUser) {
@@ -188,3 +291,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 });
+
+// Экспортируем функции для использования в играх
+window.AuthHelpers = {
+    hashPassword,
+    checkSession,
+    updateSession,
+    validateUser,
+    sanitizeInput,
+    isValidUsername,
+    isValidPassword,
+    saveGameHistory,
+    getGameHistory,
+    updateUserStats
+};
